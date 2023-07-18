@@ -3,18 +3,24 @@ import requests
 from datetime import datetime
 import asyncio
 
+# Create a session to reuse the TCP connection (much better performance)
+session = requests.Session()
+
 
 def getSoup(website):
-    page = requests.get(website)
+    page = session.get(website)
+    page.raise_for_status()
     soup = BeautifulSoup(page.content, "lxml")
     return soup
 
 
 class F1StatsScraper:
-    def __init__(self, soup):
-        self.soup = soup
+    def __init__(self):
+        pass
 
-    def getColumnNames(self, soup):
+    def getColumnNames(self):
+        website = "https://www.formula1.com/en/results.html/2023/drivers.html"
+        soup = getSoup(website)
         column_name_change_map = {
             "Car": "Team",
             "PTS": "Points",
@@ -29,11 +35,10 @@ class F1StatsScraper:
 
         return column_names
 
-    def getDriversStats(self, start_season, end_season):
+    def getDriversStats(self):
         drivers_stats = []
-        for season in range(start_season, end_season):
+        for season in range(1950, 2023):
             website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
-            print(website)
             soup = getSoup(website)
             for row in soup.find_all("tr")[1:]:
                 driver_stats = []
@@ -53,14 +58,10 @@ class F1StatsScraper:
 
 def main():
     website = "https://www.formula1.com/en/results.html/2022/drivers.html"
-    soup = getSoup(website)
 
-    scraper = F1StatsScraper(soup)
-    column_names = scraper.getColumnNames(soup)
-    drivers_stats = scraper.getDriversStats(2020, 2023)
-    print(drivers_stats)
-    # print(column_names)
-    # print(drivers_stats)
+    scraper = F1StatsScraper()
+
+    session.close()
 
 
 if __name__ == "__main__":
