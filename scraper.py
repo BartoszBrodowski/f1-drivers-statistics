@@ -1,20 +1,18 @@
 from bs4 import BeautifulSoup
 import requests
 from datetime import datetime
-import re
+import asyncio
 
-website = "https://www.formula1.com/en/results.html/2022/drivers.html"
+
+def getSoup(website):
+    page = requests.get(website)
+    soup = BeautifulSoup(page.content, "lxml")
+    return soup
 
 
 class F1StatsScraper:
-    def getPage(self, url):
-        page = requests.get(url)
-        return page
-
-    def makeSoup(self, page):
-        # Using lxml parser for speed (as BeautifulSoup docs say)
-        soup = BeautifulSoup(page.content, "lxml")
-        return soup
+    def __init__(self, soup):
+        self.soup = soup
 
     def getColumnNames(self, soup):
         column_name_change_map = {
@@ -31,39 +29,38 @@ class F1StatsScraper:
 
         return column_names
 
-    def getDriversStats(self, soup, seasons_num):
+    def getDriversStats(self, start_season, end_season):
         drivers_stats = []
-        for row in soup.find_all("tr")[1:]:
-            driver_stats = []
-            for stat in row.find_all(
-                "td",
-                class_=lambda value: value is None or "limiter" not in value.split(),
-            ):
-                driver_stats.append(stat.getText())
-            drivers_stats.append(driver_stats)
+        for season in range(start_season, end_season):
+            website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
+            print(website)
+            soup = getSoup(website)
+            for row in soup.find_all("tr")[1:]:
+                driver_stats = []
+                for stat in row.find_all(
+                    "td",
+                    class_=lambda value: value is None
+                    or "limiter" not in value.split(),
+                ):
+                    driver_stats.append(stat.getText().replace("\n", " ").strip())
+                drivers_stats.append(driver_stats)
 
         return drivers_stats
 
-    # def getDriversStats(self, soup, seasons_num):
-    #     drivers_stats = []
-    #     driver_rows = soup.find_all("tr")[1:]
-    #     for driver in driver_rows:
-    #         driver_stats = []
-    #         driver_columns = driver.find_all("td")
-    #         for stats in driver_columns:
-    #             driver_stats.append(stats.getText())
-    #         drivers_stats.append(driver_stats)
-
-    #     return soup.find_all("tr")[1:]
+    def getDrivers(self, soup):
+        pass
 
 
 def main():
-    scraper = F1StatsScraper()
-    page = scraper.getPage(website)
-    soup = scraper.makeSoup(page)
+    website = "https://www.formula1.com/en/results.html/2022/drivers.html"
+    soup = getSoup(website)
+
+    scraper = F1StatsScraper(soup)
     column_names = scraper.getColumnNames(soup)
-    drivers_stats = scraper.getDriversStats(soup, 1)
-    print(len(drivers_stats[0]))
+    drivers_stats = scraper.getDriversStats(2020, 2023)
+    print(drivers_stats)
+    # print(column_names)
+    # print(drivers_stats)
 
 
 if __name__ == "__main__":
