@@ -1,9 +1,12 @@
 from bs4 import BeautifulSoup
 import requests
 from unidecode import unidecode
+from datetime import date
 
 # Create a session to reuse the TCP connection (much better performance)
 session = requests.Session()
+
+CURRENT_YEAR = date.today().year
 
 
 def get_soup(website):
@@ -45,14 +48,24 @@ class F1StatsScraper:
                 drivers.add((name_transformed, nationality))
         return drivers
 
-    def get_race_results_link(self, season, race):
+    def get_all_championship_links(self):
+        championship_links = {}
+        for season in range(1950, CURRENT_YEAR + 1):
+            championship_links[
+                season
+            ] = f"https://www.formula1.com/en/results.html/{season}/championship.html"
+        return championship_links
+
+    def get_race_link(self, season, race):
         website = f"https://www.formula1.com/en/results.html/{season}/races.html"
         soup = get_soup(website)
         race_tag = soup.find(lambda tag: tag.name == "a" and race in tag.text)
-        link = race_tag.get("href")
-        return "https://www.formula1.com" + link
+        if race_tag is not None:
+            link = race_tag.get("href")
+            return "https://www.formula1.com" + link
+        return None
 
-    def get_race_links_by_season(self, season):
+    def get_all_race_links_by_season(self, season):
         grand_prix_links = {}
         website = f"https://www.formula1.com/en/results.html/{season}/races.html"
         soup = get_soup(website)
@@ -64,6 +77,15 @@ class F1StatsScraper:
             grand_prix_links[grand_prix_name] = link
 
         return grand_prix_links
+
+    def get_race_links_every_season(self, race):
+        race_links = {}
+        for season in range(1950, CURRENT_YEAR + 1):
+            race_link = self.get_race_results_link(season, race)
+            if race_link is not None:
+                race_links[season] = race_link
+
+        return race_links
 
     def get_driver_links_by_season(self, season):
         websites = []
@@ -92,12 +114,12 @@ class F1StatsScraper:
             "Points",
         ]
         for season in range(start_season, end_season + 1):
-            seasons[str(season)] = {}
-            race_links = self.get_race_links_by_season(season)
+            seasons[season] = {}
+            race_links = self.get_all_race_links_by_season(season)
 
             # Add race names
             for race in race_links:
-                seasons[str(season)][race] = []
+                seasons[season][race] = []
 
             # Add driver names, positions and points
             for race, link in race_links.items():
@@ -114,7 +136,7 @@ class F1StatsScraper:
                         if "limiter" not in elem.get("class")
                     ]
                     row_dict = dict(zip(column_names, row_text))
-                    seasons[str(season)][race].append(row_dict)
+                    seasons[season][race].append(row_dict)
 
         return seasons
 
