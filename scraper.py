@@ -14,13 +14,23 @@ def getSoup(website):
 
 
 class F1StatsScraper:
-    def __init__(self, start_season, end_season):
-        self.start_season = start_season
-        self.end_season = end_season
-
-    def getDrivers(self):
+    def getDriversBySeason(self, season):
         drivers = set()
-        for season in range(self.start_season, self.end_season):
+        website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
+        soup = getSoup(website)
+        for driver in soup.find_all("tr")[1:]:
+            nationality = driver.find("td", class_="dark semi-bold uppercase").getText()
+            # Transforming name to not contain a name tag
+            name_array_without_tag = (
+                driver.find("a").getText().strip().splitlines()[:-1]
+            )
+            name_transformed = " ".join(name_array_without_tag)
+            drivers.add((name_transformed, nationality))
+        return drivers
+
+    def getDriversByRange(self, start_season, end_season):
+        drivers = set()
+        for season in range(start_season, end_season + 1):
             website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
             soup = getSoup(website)
             for driver in soup.find_all("tr")[1:]:
@@ -35,9 +45,9 @@ class F1StatsScraper:
                 drivers.add((name_transformed, nationality))
         return drivers
 
-    def getDriversByYear(self, year):
+    def getDriversBySeason(self, season):
         drivers = set()
-        website = f"https://www.formula1.com/en/results.html/{year}/drivers.html"
+        website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
         soup = getSoup(website)
         for driver in soup.find_all("tr")[1:]:
             name_array_without_tag = (
@@ -48,7 +58,14 @@ class F1StatsScraper:
 
         return drivers
 
-    def getGrandPrixLinksInSeason(self, season):
+    def getRaceResultsLink(self, season, race):
+        website = f"https://www.formula1.com/en/results.html/{season}/races.html"
+        soup = getSoup(website)
+        race_tag = soup.find(lambda tag: tag.name == "a" and race in tag.text)
+        link = race_tag.get("href")
+        return "https://www.formula1.com" + link
+
+    def getRaceLinksBySeason(self, season):
         grand_prix_links = {}
         website = f"https://www.formula1.com/en/results.html/{season}/races.html"
         soup = getSoup(website)
@@ -61,9 +78,9 @@ class F1StatsScraper:
 
         return grand_prix_links
 
-    def getDriversWebsitesBySeason(self, season):
+    def getDriverLinksBySeason(self, season):
         websites = []
-        drivers = self.getDriversByYear(season)
+        drivers = self.getDriversBySeason(season)
         for driver in drivers:
             driver_name = unidecode(driver.replace(" ", "-").lower())
             tag_1st_part = driver[:3].upper()
@@ -76,7 +93,7 @@ class F1StatsScraper:
 
         return websites
 
-    def getDriversStatsForEveryRace(self):
+    def getAllRaceResultsByRange(self, start_season, end_season):
         seasons = {}
         column_names = [
             "Position",
@@ -87,15 +104,13 @@ class F1StatsScraper:
             "Time/Retired",
             "Points",
         ]
-        for season in range(self.start_season, self.end_season):
-            seasons[str(season)] = {}
-            race_links = self.getGrandPrixLinksInSeason(season)
+        for season in range(start_season, end_season + 1):
+            seasons = {}
+            race_links = self.getRaceLinksBySeason(season)
 
             # Add race names
             for race in race_links:
-                # seasons[str(season)][race] = {}
                 seasons[str(season)][race] = []
-            drivers = self.getDriversByYear(season)
 
             # Add driver names, positions and points
             for race, link in race_links.items():
@@ -116,25 +131,6 @@ class F1StatsScraper:
                     seasons[str(season)][race].append(row_dict)
 
         return seasons
-        # grand_prix_name = grand_prix.getText().strip()
-        # grand_prix_website = "https://www.formula1.com" + grand_prix.get("href")
-        # grand_prix_soup = getSoup(grand_prix_website)
-        # for driver_website in driver_websites:
-        #     driver_soup = getSoup(driver_website)
-        #     driver_name = driver_soup.find(
-        #         "h1", class_="ResultsArchiveTitle"
-        #     ).getText()
-        #     driver_points = driver_soup.find_all("td", class_="bold")[
-        #         1
-        #     ].getText()
-        #     if driver_name not in seasons[str(season)]:
-        #         seasons[str(season)][driver_name] = {}
-        #     seasons[str(season)][driver_name][grand_prix_name] = driver_points
-        # print(grand_prix_list)
-        # print(seasons)
-
-    def getRaceResults(self):
-        races = set()
 
     def getColumnNames(self):
         website = "https://www.formula1.com/en/results.html/2023/drivers.html"
@@ -153,46 +149,57 @@ class F1StatsScraper:
 
         return column_names
 
-    def getDriversChampionshipStats(self):
-        drivers_stats = []
-        for season in range(self.start_season, self.end_season):
-            website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
-            soup = getSoup(website)
-            for row in soup.find_all("tr")[1:]:
-                driver_stats = []
+    def getDriversChampionshipStatsBySeason(self, season):
+        website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
+        soup = getSoup(website)
+
+        rows = soup.find_all("tr")[1:]
+
+        drivers_stats = [
+            [
+                stat.getText().replace("\n", " ").strip()
                 for stat in row.find_all(
                     "td",
                     class_=lambda value: value is None
                     or "limiter" not in value.split(),
-                ):
-                    driver_stats.append(stat.getText().replace("\n", " ").strip())
-                drivers_stats.append(driver_stats)
+                )
+            ]
+            for row in rows
+        ]
 
         return drivers_stats
 
-    # def getDriversRacePoints(self):
-    #     drivers_points = []
-    #     for season in range(self.start_season, self.end_season):
-    #         website = f"https://www.formula1.com/en/results.html/{season}/drivers/MAXVER01/max-verstappen.html"
-    #         # website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
-    #         soup = getSoup(website)
-    #         for grand_prix in soup.find_all("tr")[1:]:
-    #             driver_points = []
-    #             for points in grand_prix.find_all("td", class_="bold"):
-    #                 driver_points.append(points.getText().replace("\n", " ").strip())
-    #             drivers_points.append(driver_points)
+    def getDriversChampionshipStatsByRange(self, start_season, end_season):
+        drivers_stats = []
 
-    #     return drivers_points
+        for season in range(start_season, end_season + 1):
+            website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
+            soup = getSoup(website)
+
+            rows = soup.find_all("tr")[1:]
+
+            driver_stats = [
+                [
+                    stat.getText().replace("\n", " ").strip()
+                    for stat in row.find_all(
+                        "td",
+                        class_=lambda value: value is None
+                        or "limiter" not in value.split(),
+                    )
+                ]
+                for row in rows
+            ]
+
+        drivers_stats.extend(driver_stats)
+
+        return drivers_stats
 
 
 def main():
-    website = "https://www.formula1.com/en/results.html/2022/drivers.html"
+    scraper = F1StatsScraper()
 
-    scraper = F1StatsScraper(2012, 2013)
-
-    # drivers = scraper.getDriversStatsForEveryRace()
-    season_2012_stats = scraper.getDriversStatsForEveryRace()
-    print(season_2012_stats["2012"]["Australia"])
+    test = scraper.getDriversChampionshipStatsBySeason(2022)
+    print(test)
 
     session.close()
 
