@@ -45,19 +45,6 @@ class F1StatsScraper:
                 drivers.add((name_transformed, nationality))
         return drivers
 
-    def get_drivers_by_season(self, season):
-        drivers = set()
-        website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
-        soup = get_soup(website)
-        for driver in soup.find_all("tr")[1:]:
-            name_array_without_tag = (
-                driver.find("a").getText().strip().splitlines()[:-1]
-            )
-            name_transformed = " ".join(name_array_without_tag)
-            drivers.add(name_transformed)
-
-        return drivers
-
     def get_race_results_link(self, season, race):
         website = f"https://www.formula1.com/en/results.html/{season}/races.html"
         soup = get_soup(website)
@@ -105,7 +92,7 @@ class F1StatsScraper:
             "Points",
         ]
         for season in range(start_season, end_season + 1):
-            seasons = {}
+            seasons[str(season)] = {}
             race_links = self.get_race_links_by_season(season)
 
             # Add race names
@@ -120,11 +107,10 @@ class F1StatsScraper:
 
                 for row in filtered_rows:
                     row_text = [
-                        elem.text.replace("\n", " ") if i != 3
-                        # Delete last 4 characters from drivers name because it's always ' TAG' (TAG is always first 3 letters of drivers surname)
-                        else elem.text.replace("\n", " ")[:-5]
+                        elem.text.replace("\n", " ")[:-5]
+                        if i == 3
+                        else elem.text.replace("\n", " ")
                         for i, elem in enumerate(row.find_all(["td"]))
-                        # Ignore class='limiter' elements and exclude the 6th element
                         if "limiter" not in elem.get("class")
                     ]
                     row_dict = dict(zip(column_names, row_text))
@@ -198,7 +184,7 @@ class F1StatsScraper:
 def main():
     scraper = F1StatsScraper()
 
-    test = scraper.get_drivers_championship_stats(2022)
+    test = scraper.get_all_race_results_by_range(2022, 2023)
     print(test)
 
     session.close()
