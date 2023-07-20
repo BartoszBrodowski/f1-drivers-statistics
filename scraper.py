@@ -194,7 +194,7 @@ class F1StatsScraper:
         return drivers_stats
 
     def get_drivers_championship_stats_by_range(self, start_season, end_season):
-        drivers_stats = []
+        drivers_stats = {}
 
         for season in range(start_season, end_season + 1):
             website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
@@ -202,19 +202,32 @@ class F1StatsScraper:
 
             rows = soup.find_all("tr")[1:]
 
-            driver_stats = [
-                [
-                    stat.get_text().replace("\n", " ").strip()
-                    for stat in row.find_all(
-                        "td",
-                        class_=lambda value: value is None
-                        or "limiter" not in value.split(),
-                    )
-                ]
-                for row in rows
-            ]
+            season_stats = []
 
-        drivers_stats.extend(driver_stats)
+            for row in rows:
+                cells = row.find_all(
+                    "td",
+                    class_=lambda value: value is None
+                    or "limiter" not in value.split(),
+                )
+
+                position = cells[0].get_text()
+                name = " ".join(cells[1].get_text().strip().splitlines()[:-1])
+                nationality = cells[2].get_text()
+                team = cells[3].get_text().replace("\n", " ").strip()
+                points = cells[4].get_text()
+
+                driver_stats = {
+                    "Position": position,
+                    "Name": name,
+                    "Nationality": nationality,
+                    "Team": team,
+                    "Points": points,
+                }
+
+                season_stats.append(driver_stats)
+
+            drivers_stats[season] = season_stats
 
         return drivers_stats
 
@@ -311,7 +324,7 @@ class F1StatsScraper:
 def main():
     scraper = F1StatsScraper()
 
-    test = scraper.get_constructors_championship_stats(2015)
+    test = scraper.get_drivers_championship_stats_by_range(2015, 2016)
     print(test)
 
     session.close()
