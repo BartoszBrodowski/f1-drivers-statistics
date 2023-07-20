@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 from unidecode import unidecode
 from datetime import date
+import re
 
 # Create a session to reuse the TCP connection (much better performance)
 session = requests.Session()
@@ -22,10 +23,12 @@ class F1StatsScraper:
         website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
         soup = get_soup(website)
         for driver in soup.find_all("tr")[1:]:
-            nationality = driver.find("td", class_="dark semi-bold uppercase").getText()
+            nationality = driver.find(
+                "td", class_="dark semi-bold uppercase"
+            ).get_text()
             # Transforming name to not contain a name tag
             name_array_without_tag = (
-                driver.find("a").getText().strip().splitlines()[:-1]
+                driver.find("a").get_text().strip().splitlines()[:-1]
             )
             name_transformed = " ".join(name_array_without_tag)
             drivers.add((name_transformed, nationality))
@@ -39,10 +42,10 @@ class F1StatsScraper:
             for driver in soup.find_all("tr")[1:]:
                 nationality = driver.find(
                     "td", class_="dark semi-bold uppercase"
-                ).getText()
+                ).get_text()
                 # Transforming name to not contain a name tag
                 name_array_without_tag = (
-                    driver.find("a").getText().strip().splitlines()[:-1]
+                    driver.find("a").get_text().strip().splitlines()[:-1]
                 )
                 name_transformed = " ".join(name_array_without_tag)
                 drivers.add((name_transformed, nationality))
@@ -71,7 +74,7 @@ class F1StatsScraper:
         soup = get_soup(website)
         grand_prix_list = soup.select("td > a")
         for grand_prix in grand_prix_list:
-            grand_prix_name = grand_prix.getText().strip()
+            grand_prix_name = grand_prix.get_text().strip()
             grand_prix_href = grand_prix.get("href")
             link = "https://www.formula1.com" + grand_prix_href
             grand_prix_links[grand_prix_name] = link
@@ -150,9 +153,9 @@ class F1StatsScraper:
         }
 
         column_names = [
-            column_name_change_map.get(name.getText(), name.getText())
+            column_name_change_map.get(name.get_text(), name.get_text())
             for name in soup.find_all("th")
-            if name.getText() != ""
+            if name.get_text() != ""
         ]
 
         return column_names
@@ -165,7 +168,7 @@ class F1StatsScraper:
 
         drivers_stats = [
             [
-                stat.getText().replace("\n", " ").strip()
+                stat.get_text().replace("\n", " ").strip()
                 for stat in row.find_all(
                     "td",
                     class_=lambda value: value is None
@@ -188,7 +191,7 @@ class F1StatsScraper:
 
             driver_stats = [
                 [
-                    stat.getText().replace("\n", " ").strip()
+                    stat.get_text().replace("\n", " ").strip()
                     for stat in row.find_all(
                         "td",
                         class_=lambda value: value is None
@@ -202,12 +205,36 @@ class F1StatsScraper:
 
         return drivers_stats
 
+    # By default, get the current season championship
+    def get_drivers_world_champion(self, season=CURRENT_YEAR - 1):
+        website = (
+            f"https://en.wikipedia.org/wiki/{season}_Formula_One_World_Championship"
+        )
+        soup = get_soup(website)
+        champion = (
+            soup.find(class_="motorsport-season-nav-subheader")
+            .select("a")[1]
+            .get_text()
+        )
+
+        return champion
+
+    def get_constructors_world_champion(self, season=CURRENT_YEAR - 1):
+        website = (
+            f"https://en.wikipedia.org/wiki/{season}_Formula_One_World_Championship"
+        )
+        soup = get_soup(website)
+        champion = (
+            soup.find(class_="motorsport-season-nav-subheader")
+            .select("a")[3]
+            .get_text()
+        )
+
+        return champion
+
 
 def main():
     scraper = F1StatsScraper()
-
-    test = scraper.get_all_race_results_by_range(2022, 2023)
-    print(test)
 
     session.close()
 
