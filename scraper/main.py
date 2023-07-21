@@ -167,29 +167,19 @@ class F1StatsScraper:
         website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
         soup = get_soup(website)
 
-        rows = soup.find_all("tr")[1:]
+        driver_table_rows = soup.find_all("tr")[1:]
 
-        for row in rows:
-            cells = row.find_all(
-                "td",
-                class_=lambda value: value is None or "limiter" not in value.split(),
-            )
-
-            position = cells[0].get_text()
-            name = " ".join(cells[1].get_text().strip().splitlines()[:-1])
-            nationality = cells[2].get_text()
-            team = cells[3].get_text().replace("\n", " ").strip()
-            points = cells[4].get_text()
-
-            team_stats = {
-                "Position": position,
-                "Name": name,
-                "Nationality": nationality,
-                "Team": team,
-                "Points": points,
-            }
-
-            drivers_stats.append(team_stats)
+        drivers_stats = [
+            [
+                stat.get_text().replace("\n", " ").strip()
+                for stat in row.find_all(
+                    "td",
+                    class_=lambda value: value is None
+                    or "limiter" not in value.split(),
+                )
+            ]
+            for row in driver_table_rows
+        ]
 
         return drivers_stats
 
@@ -200,63 +190,43 @@ class F1StatsScraper:
             website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
             soup = get_soup(website)
 
-            rows = soup.find_all("tr")[1:]
+            driver_table_rows = soup.find_all("tr")[1:]
 
-            season_stats = []
+            driver_stats = [
+                [
+                    stat.get_text().replace("\n", " ").strip()
+                    for stat in row.find_all(
+                        "td",
+                        class_=lambda value: value is None
+                        or "limiter" not in value.split(),
+                    )
+                ]
+                for row in driver_table_rows
+            ]
 
-            for row in rows:
-                cells = row.find_all(
-                    "td",
-                    class_=lambda value: value is None
-                    or "limiter" not in value.split(),
-                )
-
-                position = cells[0].get_text()
-                name = " ".join(cells[1].get_text().strip().splitlines()[:-1])
-                nationality = cells[2].get_text()
-                team = cells[3].get_text().replace("\n", " ").strip()
-                points = cells[4].get_text()
-
-                driver_stats = {
-                    "Position": position,
-                    "Name": name,
-                    "Nationality": nationality,
-                    "Team": team,
-                    "Points": points,
-                }
-
-                season_stats.append(driver_stats)
-
-            drivers_stats[season] = season_stats
+            drivers_stats[season] = driver_stats
 
         return drivers_stats
 
     def get_constructors_championship_stats(self, season=CURRENT_YEAR - 1):
-        constructor_stats = []
         website = f"https://www.formula1.com/en/results.html/{season}/team.html"
         soup = get_soup(website)
 
-        rows = soup.find_all("tr")[1:]
+        driver_table_rows = soup.find_all("tr")[1:]
 
-        for row in rows:
-            cells = row.find_all(
-                "td",
-                class_=lambda value: value is None or "limiter" not in value.split(),
-            )
+        driver_stats = [
+            [
+                stat.get_text().replace("\n", " ").strip()
+                for stat in row.find_all(
+                    "td",
+                    class_=lambda value: value is None
+                    or "limiter" not in value.split(),
+                )
+            ]
+            for row in driver_table_rows
+        ]
 
-            position = cells[0].get_text()
-            team = cells[1].get_text().replace("\n", " ").strip()
-            points = cells[2].get_text()
-
-            team_stats = {
-                "Position": position,
-                "Team": team,
-                "Points": points,
-            }
-
-            constructor_stats.append(team_stats)
-
-        return constructor_stats
+        return driver_stats
 
     def get_constructors_championship_stats_by_range(self, start_season, end_season):
         constructor_stats = {}
@@ -265,29 +235,21 @@ class F1StatsScraper:
             website = f"https://www.formula1.com/en/results.html/{season}/team.html"
             soup = get_soup(website)
 
-            rows = soup.find_all("tr")[1:]
-            season_stats = []
+            driver_table_rows = soup.find_all("tr")[1:]
 
-            for row in rows:
-                cells = row.find_all(
-                    "td",
-                    class_=lambda value: value is None
-                    or "limiter" not in value.split(),
-                )
+            driver_stats = [
+                [
+                    stat.get_text().replace("\n", " ").strip()
+                    for stat in row.find_all(
+                        "td",
+                        class_=lambda value: value is None
+                        or "limiter" not in value.split(),
+                    )
+                ]
+                for row in driver_table_rows
+            ]
 
-                position = cells[0].get_text()
-                team = cells[1].get_text().replace("\n", " ").strip()
-                points = cells[2].get_text()
-
-                team_stats = {
-                    "Position": position,
-                    "Team": team,
-                    "Points": points,
-                }
-
-                season_stats.append(team_stats)
-
-            constructor_stats[season] = season_stats
+            constructor_stats[season] = driver_stats
 
         return constructor_stats
 
@@ -324,8 +286,14 @@ class F1StatsScraper:
 def main():
     scraper = F1StatsScraper()
 
-    test = scraper.get_drivers_championship_stats_by_range(2015, 2016)
-    print(test)
+    drivers = scraper.get_drivers_championship_stats()
+    drivers_range = scraper.get_drivers_championship_stats_by_range(2015, 2016)
+
+    constructors = scraper.get_constructors_championship_stats()
+    constructors_range = scraper.get_constructors_championship_stats_by_range(
+        2015, 2016
+    )
+    print(constructors_range)
 
     session.close()
 

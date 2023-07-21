@@ -1,29 +1,56 @@
 import psycopg2
 
-# PostgreSQL connection parameters
-host = "localhost"
-port = "5432"  # Default PostgreSQL port
-database = "postgres"
-user = "postgres"
-password = "mypassword"
+db_params = {
+    "host": "localhost",
+    "port": "5432",
+    "database": "postgres",
+    "user": "postgres",
+    "password": "mypassword",
+}
 
-# Create a connection to the PostgreSQL server
 try:
-    connection = psycopg2.connect(
-        host=host, port=port, database=database, user=user, password=password
-    )
+    connection = psycopg2.connect(**db_params)
 
-    # Create a cursor to perform database operations
     cursor = connection.cursor()
 
-    # Execute a sample query
     cursor.execute("SELECT version();")
-
-    # Fetch and print the result
     db_version = cursor.fetchone()
     print(f"Connected to PostgreSQL server: {db_version[0]}")
 
-    # Don't forget to close the cursor and connection
+    truncate_table = """
+        TRUNCATE TABLE drivers RESTART IDENTITY;
+    """
+    cursor.execute(truncate_table)
+
+    create_drivers_table = """
+    CREATE TABLE IF NOT EXISTS drivers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(30) NOT NULL,
+        nationality VARCHAR(3) NOT NULL
+    );
+    """
+    cursor.execute(create_drivers_table)
+
+    driver_data = [
+        ("Max Verstappen", "NED"),
+        ("Lewis Hamilton", "GBR"),
+        ("Valtteri Bottas", "FIN"),
+    ]
+
+    insert_query = """INSERT INTO drivers (name, nationality) VALUES (%s, %s);"""
+
+    cursor.executemany(insert_query, driver_data)
+
+    connection.commit()
+
+    select_data_query = "SELECT * FROM drivers;"
+    cursor.execute(select_data_query)
+    inserted_data = cursor.fetchall()
+
+    print("Contents of 'drivers':")
+    for row in inserted_data:
+        print(f"ID: {row[0]}, name: {row[1]}, nationality: {row[2]}")
+
     cursor.close()
     connection.close()
 
