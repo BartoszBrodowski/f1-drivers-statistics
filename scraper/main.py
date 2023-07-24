@@ -107,15 +107,6 @@ class F1StatsScraper:
 
     def get_all_race_results_by_range(self, start_season, end_season):
         seasons = {}
-        column_names = [
-            "Position",
-            "Number",
-            "Driver",
-            "Car",
-            "Laps",
-            "Time/Retired",
-            "Points",
-        ]
         for season in range(start_season, end_season + 1):
             seasons[season] = {}
             race_links = self.get_all_race_links_by_season(season)
@@ -138,8 +129,7 @@ class F1StatsScraper:
                         for i, elem in enumerate(row.find_all(["td"]))
                         if "limiter" not in elem.get("class")
                     ]
-                    row_dict = dict(zip(column_names, row_text))
-                    seasons[season][race].append(row_dict)
+                    seasons[season][race].append(row_text)
 
         return seasons
 
@@ -286,14 +276,8 @@ class F1StatsScraper:
 def main():
     scraper = F1StatsScraper()
 
-    drivers = scraper.get_drivers_championship_stats()
-    drivers_range = scraper.get_drivers_championship_stats_by_range(2015, 2016)
-
-    constructors = scraper.get_constructors_championship_stats()
-    constructors_range = scraper.get_constructors_championship_stats_by_range(
-        2015, 2016
-    )
-    print(constructors_range)
+    test = scraper.get_all_race_results_by_range(2015, 2016)
+    print(test)
 
     session.close()
 
