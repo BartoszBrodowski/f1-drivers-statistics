@@ -18,7 +18,7 @@ def get_soup(website):
 
 
 class F1StatsScraper:
-    def get_drivers_by_season(self, season):
+    def get_drivers_by_season(self, season=CURRENT_YEAR):
         drivers = []
         website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
         soup = get_soup(website)
@@ -50,6 +50,27 @@ class F1StatsScraper:
                 name_transformed = " ".join(name_array_without_tag)
                 drivers.add((name_transformed, nationality))
         return drivers
+
+    def get_races_by_season(self, season=CURRENT_YEAR):
+        races = []
+        website = f"https://www.formula1.com/en/results.html/{season}/races.html"
+        soup = get_soup(website)
+        for race in soup.find_all("tr")[1:]:
+            name = race.find("td", class_="dark bold").get_text().strip()
+            races.append(name)
+        return races
+
+    def get_races_by_range(self, start_season, end_season):
+        races = {}
+        for season in range(start_season, end_season + 1):
+            races_by_season = []
+            website = f"https://www.formula1.com/en/results.html/{season}/races.html"
+            soup = get_soup(website)
+            for race in soup.find_all("tr")[1:]:
+                name = race.find("td", class_="dark bold").get_text().strip()
+                races_by_season.append(name)
+            races[season] = races_by_season
+        return races
 
     def get_all_championship_links(self):
         championship_links = {}
@@ -84,7 +105,7 @@ class F1StatsScraper:
     def get_race_links_every_season(self, race):
         race_links = {}
         for season in range(1950, CURRENT_YEAR + 1):
-            race_link = self.get_race_results_link(season, race)
+            race_link = self.get_race_link(season, race)
             if race_link is not None:
                 race_links[season] = race_link
 
@@ -152,7 +173,7 @@ class F1StatsScraper:
 
     # Championship stats
 
-    def get_drivers_championship_stats(self, season=CURRENT_YEAR - 1):
+    def get_drivers_championship_stats(self, season=CURRENT_YEAR):
         drivers_stats = []
         website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
         soup = get_soup(website)
@@ -198,7 +219,7 @@ class F1StatsScraper:
 
         return drivers_stats
 
-    def get_constructors_championship_stats(self, season=CURRENT_YEAR - 1):
+    def get_constructors_championship_stats(self, season=CURRENT_YEAR):
         website = f"https://www.formula1.com/en/results.html/{season}/team.html"
         soup = get_soup(website)
 
@@ -276,7 +297,7 @@ class F1StatsScraper:
 def main():
     scraper = F1StatsScraper()
 
-    test = scraper.get_drivers_by_season(2015)
+    test = scraper.get_races_by_range(2022, 2023)
     print(test)
 
     session.close()
