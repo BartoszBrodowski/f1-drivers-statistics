@@ -146,7 +146,7 @@ class F1StatsScraper:
 
                 for row in filtered_rows:
                     row_text = [
-                        elem.text.replace("\n", " ")[:-5]
+                        elem.text.strip().replace("\n", " ")[:-4]
                         if i == 3
                         else elem.text.replace("\n", " ")
                         for i, elem in enumerate(row.find_all(["td"]))
@@ -299,7 +299,7 @@ class F1StatsScraper:
 def main():
     scraper = F1StatsScraper()
 
-    test = scraper.get_driver_links_by_season(2022)
+    test = scraper.get_all_race_results_by_range(2022, 2022)
     print(test)
 
     session.close()
