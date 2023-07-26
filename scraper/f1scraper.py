@@ -115,10 +115,12 @@ class F1StatsScraper:
         websites = []
         drivers = self.get_drivers_by_season(season)
         for driver in drivers:
-            driver_name = unidecode(driver.replace(" ", "-").lower())
-            tag_1st_part = driver[:3].upper()
+            print(driver)
+            driver_name = unidecode(driver[0].replace(" ", "-").lower())
+            print(driver_name)
+            tag_1st_part = driver[0][:3].upper()
             # Get second part of URL driver tag (e.g. LEWHAM01 for Lewis Hamilton)
-            tag_2nd_part = "".join(driver.replace("'", "").split()[1:])[:3].upper()
+            tag_2nd_part = "".join(driver[0].replace("'", "").split()[1:])[:3].upper()
             # 3rd part of URL driver tag is always 01
             tag = tag_1st_part + tag_2nd_part + "01"
             website = f"https://www.formula1.com/en/results.html/{season}/drivers/{tag}/{driver_name}.html"
@@ -297,7 +299,7 @@ class F1StatsScraper:
 def main():
     scraper = F1StatsScraper()
 
-    test = scraper.get_races_by_range(2022, 2023)
+    test = scraper.get_driver_links_by_season(2022)
     print(test)
 
     session.close()
