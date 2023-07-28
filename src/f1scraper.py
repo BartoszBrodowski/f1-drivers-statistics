@@ -18,6 +18,8 @@ def get_soup(website):
 
 
 class F1StatsScraper:
+    # Drivers
+
     def get_drivers_by_season(self, season=CURRENT_YEAR):
         drivers = []
         website = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
@@ -51,6 +53,8 @@ class F1StatsScraper:
                 drivers.add((name_transformed, nationality))
         return drivers
 
+    # Races
+
     def get_races_by_season(self, season=CURRENT_YEAR):
         races = []
         website = f"https://www.formula1.com/en/results.html/{season}/races.html"
@@ -71,6 +75,8 @@ class F1StatsScraper:
                 races_by_season.append(name)
             races[season] = races_by_season
         return races
+
+    # Links
 
     def get_all_championship_links(self):
         championship_links = {}
@@ -128,6 +134,8 @@ class F1StatsScraper:
 
         return websites
 
+    # Race results
+
     def get_all_race_results_by_range(self, start_season, end_season):
         seasons = {}
         for season in range(start_season, end_season + 1):
@@ -155,23 +163,6 @@ class F1StatsScraper:
                     seasons[season][race].append(row_text)
 
         return seasons
-
-    def get_column_names(self):
-        website = "https://www.formula1.com/en/results.html/2023/drivers.html"
-        soup = get_soup(website)
-        column_name_change_map = {
-            "Car": "Team",
-            "PTS": "Points",
-            "Pos": "Position",
-        }
-
-        column_names = [
-            column_name_change_map.get(name.get_text(), name.get_text())
-            for name in soup.find_all("th")
-            if name.get_text() != ""
-        ]
-
-        return column_names
 
     # Championship stats
 
@@ -268,7 +259,6 @@ class F1StatsScraper:
 
     # Champions
 
-    # By default, get the current season championship
     def get_drivers_world_champion(self, season=CURRENT_YEAR - 1):
         website = (
             f"https://en.wikipedia.org/wiki/{season}_Formula_One_World_Championship"

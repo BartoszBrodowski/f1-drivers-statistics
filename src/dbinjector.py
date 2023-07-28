@@ -1,12 +1,16 @@
 import psycopg2
 from f1scraper import F1StatsScraper
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 db_params = {
-    "host": "localhost",
-    "port": "5432",
-    "database": "postgres",
-    "user": "postgres",
-    "password": "mypassword",
+    "host": os.getenv("POSTGRES_HOST"),
+    "port": os.getenv("POSTGRES_PORT"),
+    "database": os.getenv("POSTGRES_DB"),
+    "user": os.getenv("POSTGRES_USER"),
+    "password": os.getenv("POSTGRES_PASSWORD"),
 }
 
 
@@ -25,6 +29,7 @@ class DbInjector:
             print(f"Connected to PostgreSQL server: {db_version[0]}")
         except psycopg2.Error as e:
             print(f"Error connecting to PostgreSQL: {e}")
+            exit(1)
 
     def disconnect(self):
         if self.connection:
@@ -110,56 +115,30 @@ class DbInjector:
         self.connection.commit()
 
     def insert_into_results_table(self, data):
-        results = []
         insert_query = """
-            INSERT INTO results (race_id, race_position, racing_number, driver_id, team, laps, time, race_points) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"""
-        for year, races in data.items():
+            INSERT INTO results (race_id, race_position, racing_number, driver_id, team, laps, time, race_points) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        """
+        results = []
+
+        for races in data.values():
             for race_name, race_results in races.items():
-                for result in race_results:
-                    result_formatted = result
+                for race_data in race_results:
+                    race_result = race_data
+
+                    driver_name = race_data[2]
                     get_driver_id_query = """SELECT id FROM drivers WHERE name = %s;"""
-                    self.cursor.execute(get_driver_id_query, [result[2]])
+                    self.cursor.execute(get_driver_id_query, [driver_name])
                     driver_id = self.cursor.fetchone()
+
                     get_driver_id_query = """SELECT id FROM races WHERE name = %s;"""
                     self.cursor.execute(get_driver_id_query, [race_name])
                     race_id = self.cursor.fetchone()
-                    result_formatted.pop(2)
-                    result_formatted.insert(0, race_id[0])
-                    result_formatted.insert(3, driver_id[0])
-                    results.append(result_formatted)
-        # print(results)
+
+                    # Delete driver name because we will use driver_id instead
+                    race_result.pop(2)
+                    # Insert race_id and driver_id in the correct positions
+                    race_result.insert(0, race_id[0])
+                    race_result.insert(3, driver_id[0])
+                    results.append(race_result)
+
         self.cursor.executemany(insert_query, results)
-
-
-def main():
-    injector = DbInjector(db_params)
-    f1scraper = F1StatsScraper()
-
-    injector.truncate_table("results")
-
-    # driver_data = f1scraper.get_drivers_by_range(2022, 2023)
-    # races = f1scraper.get_races_by_range(2022, 2023)
-    races_data = f1scraper.get_all_race_results_by_range(2022, 2023)
-
-    # injector.create_drivers_table()
-    # injector.create_races_table()
-    injector.create_results_table()
-
-    # injector.insert_into_drivers_table(driver_data)
-    # injector.insert_into_races_table(races)
-    injector.insert_into_results_table(races_data)
-
-    cursor = injector.cursor
-    select_query = """SELECT * FROM results;"""
-    cursor.execute(select_query)
-    inserted_data = cursor.fetchall()
-
-    print("Contents of 'results':")
-    for row in inserted_data:
-        print(
-            f"result_id: {row[0]}, position: {row[1]}, racing_number: {row[2]}, driver_id: {row[3]}, team: {row[4]}, laps: {row[5]}, time: {row[6]} points: {row[7]}"
-        )
-
-
-if __name__ == "__main__":
-    main()
