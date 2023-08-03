@@ -4,3 +4,5 @@ lxml
 unidecode
 psycopg2
 dotenv
+flask
+flask_sqlalchemy

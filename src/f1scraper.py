@@ -289,7 +289,7 @@ class F1StatsScraper:
 def main():
     scraper = F1StatsScraper()
 
-    test = scraper.get_all_race_results_by_range(2022, 2022)
+    test = scraper.get_drivers_by_range(1950, 2023)
     print(test)
 
     session.close()
