@@ -26,8 +26,9 @@ class Drivers(db.Model):
 
 
 @app.route("/drivers")
-def test():
-    drivers = Drivers.query.all()
+def get_drivers():
+    # drivers = db.session.query(Drivers).all()
+    drivers = db.session.scalars(db.select(Drivers)).all()
 
     result = [
         {"id": driver.id, "name": driver.name, "nationality": driver.nationality}
@@ -35,3 +36,28 @@ def test():
     ]
 
     return jsonify(result)
+
+
+@app.route("/drivers/top/nationalities")
+def get_top_nationalities():
+    nationality_counts = (
+        db.session.execute(
+            db.select(
+                db.Bundle(
+                    "driver",
+                    Drivers.nationality,
+                    db.func.count(Drivers.nationality).label("amount_of_drivers"),
+                )
+            )
+            .group_by(Drivers.nationality)
+            .order_by(db.desc("amount_of_drivers"))
+        )
+        .scalars()
+        .all()
+    )
+
+    result = [
+        {"nationality": result[0], "count": result[1]} for result in nationality_counts
+    ]
+
+    return result

@@ -142,20 +142,3 @@ class DbInjector:
                     results.append(race_result)
 
         self.cursor.executemany(insert_query, results)
-
-
-def main():
-    db_injector = DbInjector(db_params)
-    cursor = db_injector.cursor
-
-    select_drivers_query = """SELECT * FROM drivers;"""
-    cursor.execute(select_drivers_query)
-    drivers = cursor.fetchall()
-
-    print("Content of drivers:")
-    for row in drivers:
-        print(f"id: {row[0]}, name: {row[1]}, nationality: {row[2]}")
-
-
-if __name__ == "__main__":
-    main()
