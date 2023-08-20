@@ -183,7 +183,19 @@ class F1StatsScraper:
             }
         return seasons
 
-    # Championship stats
+    # Driver Championship stats
+
+    def get_drivers_world_champion(self, season=CURRENT_YEAR - 1):
+        link = "https://en.wikipedia.org/wiki/{}_Formula_One_World_Championship"
+        link = get_link_by_season(season, link)
+        soup = get_soup(link)
+        champion = (
+            soup.find(class_="motorsport-season-nav-subheader")
+            .select("a")[1]
+            .get_text()
+        )
+
+        return champion
 
     def get_drivers_championship_stats(self, season=CURRENT_YEAR):
         link = f"https://www.formula1.com/en/results.html/{season}/drivers.html"
@@ -207,7 +219,53 @@ class F1StatsScraper:
             ]
             for season in range(start_season, end_season + 1)
         }
+    
+    def get_drivers_world_champions_stats(self):
+        def remove_substring(element):
+            pattern = r'\[\w\]'
+            element = re.sub(pattern, '', str(element))
+            return element
+        
+        def get_row_stats(row):
+            return [
+                row[0],  # Year
+                row[1][:-4].strip(),  # Driver
+                row[2],  # Age
+                float(row[10]),  # Points
+                row[14]  # Margin (points advatnage over the vice-champion)
+            ]
+        
+        def is_proper(row):
+            return len(row) > 4
+        
+        link = "https://en.wikipedia.org/wiki/List_of_Formula_One_World_Drivers%27_Champions"
+        soup = get_soup(link)
+        table_rows = soup.find_all("tbody")[2]
+        table_cells = table_rows.select('tr')[2:-2]
 
+        rows = [element.get_text() for element in table_cells]
+        champions_stats = [[element for element in row.split('\n')[:30] if element != ''] for row in rows]
+
+        champions_stats = [get_row_stats(row) for row in champions_stats if is_proper(row)]
+        champions_stats = [[remove_substring(element) for element in row] for row in champions_stats]
+
+        return champions_stats
+
+    # Constructors Championship stats
+
+    def get_constructors_world_champion(self, season=CURRENT_YEAR - 1):
+        link = (
+            f"https://en.wikipedia.org/wiki/{season}_Formula_One_World_Championship"
+        )
+        soup = get_soup(link)
+        champion = (
+            soup.find(class_="motorsport-season-nav-subheader")
+            .select("a")[3]
+            .get_text()
+        )
+
+        return champion
+    
     def get_constructors_championship_stats(self, season=CURRENT_YEAR):
         link = f"https://www.formula1.com/en/results.html/{season}/team.html"
         soup = get_soup(link)
@@ -231,35 +289,26 @@ class F1StatsScraper:
 
     # Champions
 
-    def get_drivers_world_champion(self, season=CURRENT_YEAR - 1):
-        link = "https://en.wikipedia.org/wiki/{}_Formula_One_World_Championship"
-        link = get_link_by_season(season, link)
+    
+    def get_constructors_world_champions_stats(self):
+        link = "https://en.wikipedia.org/wiki/List_of_Formula_One_World_Constructors%27_Champions"
         soup = get_soup(link)
-        champion = (
-            soup.find(class_="motorsport-season-nav-subheader")
-            .select("a")[1]
-            .get_text()
-        )
+        table_rows = soup.find_all("tbody")[2]
+        table_cells = table_rows.select('tr')[2:-2]
 
-        return champion
+        rows = [element.get_text() for element in table_cells]
+        champions_stats = [[element for element in row.split('\n')[:30] if element != ''] for row in rows]
 
-    def get_constructors_world_champion(self, season=CURRENT_YEAR - 1):
-        link = (
-            f"https://en.wikipedia.org/wiki/{season}_Formula_One_World_Championship"
-        )
-        soup = get_soup(link)
-        champion = (
-            soup.find(class_="motorsport-season-nav-subheader")
-            .select("a")[3]
-            .get_text()
-        )
+                           #Year,   Team,   Points, Margin    
+        champions_stats = [[row[0], row[1], row[9], row[11]] for row in champions_stats if len(row) > 4]
+        champions_stats = [[element for element in row] for row in champions_stats]
 
-        return champion
+        return champions_stats
 
 def main():
     scraper = F1StatsScraper()
 
-    test = scraper.get_drivers_by_range(2016,2023)
+    test = scraper.get_drivers_world_champions_stats()
     print(test)
 
     session.close()
