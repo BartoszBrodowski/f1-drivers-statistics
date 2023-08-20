@@ -1,8 +1,9 @@
-bs4
-requests
-lxml
 unidecode
+bs4
+lxml
+requests
 psycopg2
-dotenv
+python-dotenv
 flask
 flask_sqlalchemy
+flask_cors
