@@ -1,7 +1,9 @@
-from flask import Flask, jsonify
+from flask import Flask
+from flask_cors import CORS
 import os
 
 app = Flask(__name__)
+CORS(app)
 
 host = os.getenv("POSTGRES_HOST")
 port = os.getenv("POSTGRES_PORT")
