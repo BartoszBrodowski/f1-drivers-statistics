@@ -7,3 +7,4 @@ python-dotenv
 flask
 flask_sqlalchemy
 flask_cors
+flask_limiter

@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 
 services:
   db:
@@ -9,3 +9,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - 5432:5432
+    depends_on:
+      - redis
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - 6379:6379

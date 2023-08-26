@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from models.driver import Driver
 from models.drivers_championship import DriversChampionship
@@ -6,6 +6,9 @@ import os
 
 from app import db, app
 
+@app.route("/test")
+def test():
+    return 'Hello world'
 
 @app.route("/drivers")
 def get_drivers():
