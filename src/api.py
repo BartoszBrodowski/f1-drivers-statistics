@@ -1,8 +1,6 @@
-from flask import Flask, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
+from flask import jsonify, request
 from models.driver import Driver
 from models.drivers_championship import DriversChampionship
-import os
 
 from app import db, app
 
@@ -12,15 +10,21 @@ def test():
 
 @app.route("/drivers")
 def get_drivers():
-    drivers = db.session.scalars(db.select(Driver)).all()
+    try:
+        drivers = db.session.query(Driver).all()
 
-    result = [
-        {"id": driver.id, "name": driver.name, "nationality": driver.nationality}
-        for driver in drivers
-    ]
+        if not drivers:
+            return jsonify({"error": "Resource not found"}), 404
 
-    return jsonify(result)
+        result = [
+            {"id": driver.id, "name": driver.name, "nationality": driver.nationality}
+            for driver in drivers
+        ]
 
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": "Database connection error"}), 500
 
 @app.route("/drivers/top/nationalities")
 def get_top_nationalities():
@@ -105,3 +109,47 @@ def get_age_categories():
     ]
 
     return age_category_results
+
+@app.route('/drivers/championships/winners/amount')
+def get_most_titles_amount():
+
+    subquery = db.session.query(DriversChampionship.driver_id, db.func.count(DriversChampionship.id).label('titles')).group_by(DriversChampionship.driver_id).subquery()
+    query = db.session.query(subquery.c.titles, db.func.count(subquery.c.driver_id).label('drivers_amount')).group_by(subquery.c.titles).order_by(subquery.c.titles.desc())
+
+    results = query.all()
+
+    formatted_results = [
+        {
+            "titles": result.titles,
+            "drivers_amount": result.drivers_amount
+        }
+        for result in results
+    ]
+
+    return formatted_results
+    
+@app.route('/drivers/championships/most_titles')
+def get_most_titles():
+    query = db.session.query(
+        Driver.name.label('name'),
+        db.func.count(DriversChampionship.id).label('title_count'),
+        db.func.count(Driver.nationality).label("amount_of_drivers"),
+    ).join(
+        DriversChampionship, DriversChampionship.driver_id == Driver.id
+    ).group_by(
+        Driver.name
+    ).order_by(
+        db.desc('title_count')
+    )
+
+    results = query.all()
+
+    formatted_results = [
+        {
+            "name": result.name,
+            "title_count": result.title_count
+        }
+        for result in results
+    ]
+
+    return formatted_results
