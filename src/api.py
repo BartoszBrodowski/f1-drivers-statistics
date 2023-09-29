@@ -1,8 +1,27 @@
 from flask import jsonify, request
+from flask_caching import Cache
 from models.driver import Driver
 from models.drivers_championship import DriversChampionship
 
 from app import db, app
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+
+cache_timeout = 600
+
+@app.before_request
+def apply_cache():
+    if request.method == 'GET':
+        cache_key = f'cache:{request.path}'
+        cached_response = cache.get(cache_key)
+        if cached_response is not None:
+            return cached_response
+
+@app.after_request
+def cache_response(response):
+    if response.status_code == 200 and request.method == 'GET':
+        cache_key = f'cache:{request.path}'
+        cache.set(cache_key, response, timeout=cache_timeout)
+    return response
 
 @app.route("/test")
 def test():
