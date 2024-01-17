@@ -1,10 +1,10 @@
 ## I am a big F1 fan and one day I was wondering :racing_car:
 
-What would a statistic on the drivers nationality like, how many drivers come from Germany or what is the average age of Champions. This led to creation of this project which is a F1 Statistics Database.
+What started as a curiosity about statistics on drivers' nationalities, such as the number of drivers from Germany or the average age of champions, evolved into the creation of a this project.
 
-I had to somehow get access to data, however there was no popular and well working API, so I decided to get the data myself. 
+I had to somehow get access to the data, however there was no popular and well working API, so I decided to get the data myself. 
 
-At the start I wanted to only scrape data from official Formula1 website. Most of the data is scraped from there, however finishing this project I saw that Wikipedia has more in-depth data and decided to add scraping this website as well.
+In the beggining I wanted to only scrape data from official Formula1 website. While I successfully gathered most of the information I wanted from there, the completion of the project led me to discover that Wikipedia contained more in-depth data on some of the topics like drivers in a particular seasons.
 
 ## Technologies :hammer_and_wrench:
 - Python
@@ -21,7 +21,7 @@ My idea for creating the project was to have 3 main parts:
 - API
 
 ### Scraper:
-The concept was to scrape the data mainly from the official Formula1 website as this should be the best place to get legit F1 data. Finishing the project I realised there is some better in-depth info on Wikipedia comparing to Formula1.com as for example drivers that finished seasons with no points. I didn't include these drivers in the first years of F1 as there was too many and they didn't have much historic impact. I've added some from the recent years
+Scraper was a way to conviniently insert data to DB using Python scripting. I wanted to challenge myself to create very clean and pythonic code at the same time. A lot of the code was written in a Pythonic manner ex. List Comprehensions, with few exceptions made due to code readability.
 
 ### Injector: 
 I wanted to write the Injector database as a convinient way to put your data inside the database, to challenge myself if I can handle it while maintaining clean OOP code. There is some comments left for the ease of understanding, as some of the steps are just for the sake of cleaning the data of "edge cases", which otherwise created problems in the results.
